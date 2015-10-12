@@ -21,8 +21,9 @@ class Dropout(lasagne.layers.Layer):
     def __init__(self, incoming, incoming_beliefnet, rescale=True, **kwargs):
         lasagne.layers.Layer.__init__(self, incoming, **kwargs)
         self.incoming_beliefnet = incoming_beliefnet
+        self.rescale = rescale
 
-    def get_output_for(self, input):
+    def get_output_for(self, input, deterministic=False):
         # get the probabilities from the beliefnet
         self.p = self.incoming_beliefnet.get_output_for(input)
         # sample a Bernoulli matrix using these probabilities
