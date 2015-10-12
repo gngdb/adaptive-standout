@@ -7,7 +7,7 @@ import theano.tensor as T
 from theano.sandbox.rng_mrg import MRG_RandomStreams
 _srng = MRG_RandomStreams(42)
 
-class Dropout(lasagne.layers.Layers):
+class Dropout(lasagne.layers.Layer):
     """
     Standout version of dropout. Operates in the same way as traditional 
     dropout, but this implementation allows a different dropout probability
@@ -31,7 +31,7 @@ class Dropout(lasagne.layers.Layers):
         else:
             retain_prob = 1. - self.p
             if self.rescale:
-                input \= retain_prob
+                input /= retain_prob
             # sample uniform and threshold to sample from many different 
             # probabilities
             self.uniform = _srng.uniform(self.input_shape)
