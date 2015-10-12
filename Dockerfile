@@ -10,4 +10,5 @@ RUN pip2 install -r /tmp/extra_requirements.txt
 
 RUN mkdir /adaptive-standout
 WORKDIR /adaptive-standout
-RUN git clone https://github.com/gngdb/adaptive-standout.git
+RUN git clone https://github.com/gngdb/adaptive-standout.git .
+RUN python setup.py develop
