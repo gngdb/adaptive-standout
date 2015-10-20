@@ -86,8 +86,7 @@ class DropoutCallForward(lasagne.layers.Layer):
     with the current expression so that we can use lasagne.layers.get_output 
     with any input expression.
     """
-    def __init__(self, incoming, call_layer, **kwargs):
-        lasagne.layers.Layer.__init__(self, incoming, **kwargs)
+    def init_callforward(self, call_layer):
         self.call = call_layer
     def get_output_for(self, input, **kwargs):
         self.call.patch_probabilities(input)
