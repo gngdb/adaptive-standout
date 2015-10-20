@@ -44,11 +44,14 @@ class Dropout(lasagne.layers.Layer):
         else:
             return input*self.mask
 
-def DropoutAlgorithm2(lasagne.layers.Layer):
+class DropoutAlgorithm2(lasagne.layers.Layer):
     """
     Algorithm 2 reuses parameters from the previous hidden layer to perform
     the forward prop used for dropout probabilities. Then, these are scaled 
-    with alpha and beta 
+    with alpha and beta. To make this layer work, you must place a 
+    DropoutCallForward layer before the layer before this dropout layer. When
+    calling lasagne.layers.get_output, the CallForward layer will ensure the
+    expression for p is using the correct input variable.
     Inputs:
         * incoming - previous layer
     """
@@ -60,13 +63,35 @@ def DropoutAlgorithm2(lasagne.layers.Layer):
         self.pi = self.alpha*self.W + self.beta
         self.nonlinearity = nonlinearity
 
+    def patch_probabilities(self, input):
+        """
+        Expression for self.p must depend on the output of previous layers. So,
+        we have to keep track of the expression for the output of previous
+        layers. But, we're only passed the output of the previous layer. So we
+        get a callforward layer to pass the right expression forward to this layer.
+        """
+        self.p = self.nonlinearity(T.dot(input, self.pi))
+        return None
+
     def get_output_for(self, input, deterministic=False):
-        self.p = T.nonlinearity(T.dot(input, self.pi))
         self.mask = sample_mask(self.p)
         if deterministic or T.mean(self.p) == 0:
             return self.p*input
         else:
             return input*self.mask
+
+class DropoutCallForward(lasagne.layers.Layer):
+    """
+    A layer that does nothing but set up a future layer, calling forward
+    with the current expression so that we can use lasagne.layers.get_output 
+    with any input expression.
+    """
+    def __init__(self, incoming, call_layer, **kwargs):
+        lasagne.layers.Layer.__init__(self, incoming, **kwargs)
+        self.call = call_layer
+    def get_output_for(self, input, **kwargs):
+        self.call.patch_probabilities(input)
+        return input
 
 def sample_mask(p):
     """
