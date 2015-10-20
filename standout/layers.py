@@ -16,36 +16,69 @@ class Dropout(lasagne.layers.Layer):
     Inputs:
         * incoming - previous layer in the network.
         * incoming_beliefnet - layer encoding dropout probabilities.
-        * alpha - hyperparameter controlling scaling
-        * beta - hyperparameter controlling bias
-        * rescale - after dropping out units, rescale other inputs
+        * p - probabilities (output of the belief net)
     """
-    def __init__(self, incoming, incoming_beliefnet, alpha=1.0, beta=0.0, 
-            rescale=True, **kwargs):
+    def __init__(self, incoming, p, **kwargs):
         lasagne.layers.Layer.__init__(self, incoming, **kwargs)
-        self.incoming_beliefnet = incoming_beliefnet
-        self.rescale = rescale
-        self.alpha = alpha
-        self.beta = beta
+        # don't like passing both of these, but need to monkey patch the mask
+        # later
+        self.p = p
+        self.mask = sample_mask(self.p)
+
+    def patch_mask(self, mask):
+        """
+        Patch the mask with whatever you want to put in there. It's like monkey
+        patching, but it looks totally legit.
+        """
+        self.mask = mask 
+        return mask
 
     def get_output_for(self, input, deterministic=False):
-        # get the probabilities from the beliefnet
-        self.p = self.alpha*self.incoming_beliefnet
-               + self.beta
-        # sample a Bernoulli matrix using these probabilities
-        if deterministic or self.p == 0:
+        if deterministic or T.mean(self.p) == 0:
             # when making predictions, we take the expectation over the 
             # probabilities
             return self.p*input
+        elif self.mask.ndim > 2:
+            masked = input.dimshuffle(0,1,'x')*self.mask
+            return masked.dimshuffle(2,0,1)
         else:
-            retain_prob = 1. - self.p
-            # sample uniform and threshold to sample from many different 
-            # probabilities
-            self.uniform = _srng.uniform(self.input_shape)
-            # keep if less than retain_prob
-            self.mask = self.uniform > retain_prob
-            # then just apply mask to input
             return input*self.mask
+
+def DropoutAlgorithm2(lasagne.layers.Layer):
+    """
+    Algorithm 2 reuses parameters from the previous hidden layer to perform
+    the forward prop used for dropout probabilities. Then, these are scaled 
+    with alpha and beta 
+    Inputs:
+        * incoming - previous layer
+    """
+    def __init__(self, incoming, alpha, beta, nonlinearity=lasagne.nonlinearities.sigmoid, **kwargs):
+        lasagne.layers.Layer.__init__(self, incoming, **kwargs)
+        self.W = incoming.W
+        self.alpha = alpha
+        self.beta = beta
+        self.pi = self.alpha*self.W + self.beta
+        self.nonlinearity = nonlinearity
+
+    def get_output_for(self, input, deterministic=False):
+        self.p = T.nonlinearity(T.dot(input, self.pi))
+        self.mask = sample_mask(self.p)
+        if deterministic or T.mean(self.p) == 0:
+            return self.p*input
+        else:
+            return input*self.mask
+
+def sample_mask(p):
+    """
+    give a matrix of probabilities, this will sample a mask. Theano.
+    """
+    retain_prob = 1. - p
+    # sample uniform and threshold to sample from many different 
+    # probabilities
+    uniform = _srng.uniform(p.shape)
+    # keep if less than retain_prob
+    mask = uniform > retain_prob
+    return mask
 
 def get_all_beliefnets(output_layer, input_var):
     """
@@ -65,3 +98,9 @@ def get_all_parameters(output_layer):
     """
     all_beliefnets = get_all_beliefnets(output_layer)
     return [l.W for l in all_beliefnets]
+
+def get_mask_updates(output_layer):
+    """
+    We have to be careful about mask updates, the mask is only sampled _once_
+    per minitbatch, despite running N forward props; for N hidden units.
+    """
