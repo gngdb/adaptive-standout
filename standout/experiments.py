@@ -11,26 +11,34 @@ import urllib2
 import imp
 from collections import OrderedDict
 
-def figure3architecture(alpha, beta, batch_size=128, input_dim=784, output_dim=10, 
-        n_hidden=400):
+def figure3architecture(alpha, beta, batch_size=128, input_dim=784, 
+        output_dim=10, n_hidden=400):
     """
     Returns the final and hidden layers in a network architecture that can be 
     used to replicate the results of Figure 3 in the paper.
     Inputs:
-
+        * alpha - scale hyperparam
+        * beta - shift hyperparam
+        * batch_size - size of the minibatch used (default is a nice power of 2
+    for superstitious reasons)
+        * input_dim - dimensionality of input (default is MNIST)
+        * output_dim - dimensionaility of output (default is MNIST 
+    classification)
+        * n_hidden - number of hidden units to use all the way through
     Outputs:
-
+        * l_hidden1, l_hidden2, l_out - layers in the network
     """
     l_in = lasagne.layers.InputLayer((batch_size, input_dim))
-    l_cf = layers.DropoutCallForward(l_in)
-    l_hidden = lasagne.layers.DenseLayer(l_cf, num_units=n_hidden, 
+    l_hidden1 = lasagne.layers.DenseLayer(l_in, num_units=n_hidden, 
             nonlinearity=lasagne.nonlinearities.rectify)
-    l_drop = layers.DropoutAlgorithm2(l_hidden, alpha, beta)
-    l_cf.init_callforward(l_drop)
-    l_out = lasagne.layers.DenseLayer(l_drop, num_units=output_dim, 
+    l_drop1 = layers.DropoutAlgorithm2(l_hidden1, l_in, alpha, beta)
+    l_hidden2 = lasagne.layers.DenseLayer(l_drop1, num_units=n_hidden, 
+            nonlinearity=lasagne.nonlinearities.rectify)
+    l_drop2 = layers.DropoutAlgorithm2(l_hidden2, l_in, alpha, beta)
+    l_out = lasagne.layers.DenseLayer(l_drop2, num_units=output_dim, 
             nonlinearity=lasagne.nonlinearities.softmax)
 
-    return l_hidden, l_out
+    return l_hidden1, l_hidden2, l_out
 
 def make_experiment(l_out, dataset, batch_size=128, N_train=50000, 
         N_valid=10000, N_test=10000):

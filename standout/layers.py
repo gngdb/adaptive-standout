@@ -44,7 +44,7 @@ class Dropout(lasagne.layers.Layer):
         else:
             return input*self.mask
 
-class DropoutAlgorithm2(lasagne.layers.Layer):
+class DropoutAlgorithm2(lasagne.layers.MergeLayer):
     """
     Algorithm 2 reuses parameters from the previous hidden layer to perform
     the forward prop used for dropout probabilities. Then, these are scaled 
@@ -54,43 +54,33 @@ class DropoutAlgorithm2(lasagne.layers.Layer):
     expression for p is using the correct input variable.
     Inputs:
         * incoming - previous layer
+        * alpha - scale hyperparameter
+        * beta - shift hyperparameter
     """
     def __init__(self, incoming, alpha, beta, nonlinearity=lasagne.nonlinearities.sigmoid, **kwargs):
-        lasagne.layers.Layer.__init__(self, incoming, **kwargs)
+        # pull the layer before the incoming layer out of chain 
+        incoming_input = lasagne.layers.get_all_layers(incoming)[-2]
+        lasagne.layers.MergeLayer.__init__(self, [incoming, incoming_input], **kwargs)
         self.W = incoming.W
         self.alpha = alpha
         self.beta = beta
         self.pi = self.alpha*self.W + self.beta
         self.nonlinearity = nonlinearity
 
-    def patch_probabilities(self, input):
-        """
-        Expression for self.p must depend on the output of previous layers. So,
-        we have to keep track of the expression for the output of previous
-        layers. But, we're only passed the output of the previous layer. So we
-        get a callforward layer to pass the right expression forward to this layer.
-        """
-        self.p = self.nonlinearity(T.dot(input, self.pi))
-        return None
-
-    def get_output_for(self, input, deterministic=False):
+    def get_output_for(self, inputs, deterministic=False):
+        self.p = self.nonlinearity(T.dot(inputs[1], self.pi))
         self.mask = sample_mask(self.p)
         if deterministic or T.mean(self.p) == 0:
-            return self.p*input
+            return self.p*inputs[0]
         else:
-            return input*self.mask
+            return inputs[0]*self.mask
 
-class DropoutCallForward(lasagne.layers.Layer):
-    """
-    A layer that does nothing but set up a future layer, calling forward
-    with the current expression so that we can use lasagne.layers.get_output 
-    with any input expression.
-    """
-    def init_callforward(self, call_layer):
-        self.call = call_layer
-    def get_output_for(self, input, **kwargs):
-        self.call.patch_probabilities(input)
-        return input
+    def get_output_shape_for(self, input_shapes):
+        """
+        Layer will always return the input shape of the incoming layer, because
+        it's just applying a mask to that layer.
+        """
+        return input_shapes[0]
 
 def sample_mask(p):
     """
