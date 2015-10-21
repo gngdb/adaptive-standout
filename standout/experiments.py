@@ -32,7 +32,8 @@ def figure3architecture(alpha, beta, batch_size=128, input_dim=784, output_dim=1
 
     return l_hidden, l_out
 
-def make_experiment(l_out, dataset, batch_size=128):
+def make_experiment(l_out, dataset, batch_size=128, N_train=50000, 
+        N_valid=10000, N_test=10000):
     """
     Spec up a simple experiment over the MNIST dataset.
     """
@@ -55,7 +56,7 @@ def make_experiment(l_out, dataset, batch_size=128):
 
 # Utility functions from:
 # https://github.com/gngdb/variational-dropout/blob/master/varout/experiments.py
-def earlystopping(loop, delta=0.001, max_N=1000, verbose=False):
+def earlystopping(loop, delta=0.01, max_N=1000, verbose=False):
     """
     Stops the expriment once the loss stops improving by delta per epoch.
     With a max_N of epochs to avoid infinite experiments.
