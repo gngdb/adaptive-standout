@@ -114,8 +114,3 @@ def get_all_parameters(output_layer):
     all_beliefnets = get_all_beliefnets(output_layer)
     return [l.W for l in all_beliefnets]
 
-def get_mask_updates(output_layer):
-    """
-    We have to be careful about mask updates, the mask is only sampled _once_
-    per minitbatch, despite running N forward props; for N hidden units.
-    """
