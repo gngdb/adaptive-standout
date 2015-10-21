@@ -57,7 +57,8 @@ class DropoutAlgorithm2(lasagne.layers.MergeLayer):
         * alpha - scale hyperparameter
         * beta - shift hyperparameter
     """
-    def __init__(self, incoming, alpha, beta, nonlinearity=lasagne.nonlinearities.sigmoid, **kwargs):
+    def __init__(self, incoming, alpha, beta, 
+            nonlinearity=lasagne.nonlinearities.sigmoid, **kwargs):
         # pull the layer before the incoming layer out of chain 
         incoming_input = lasagne.layers.get_all_layers(incoming)[-2]
         lasagne.layers.MergeLayer.__init__(self, [incoming, incoming_input], **kwargs)

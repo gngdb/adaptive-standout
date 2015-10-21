@@ -31,10 +31,10 @@ def figure3architecture(alpha, beta, batch_size=128, input_dim=784,
     l_in = lasagne.layers.InputLayer((batch_size, input_dim))
     l_hidden1 = lasagne.layers.DenseLayer(l_in, num_units=n_hidden, 
             nonlinearity=lasagne.nonlinearities.rectify)
-    l_drop1 = layers.DropoutAlgorithm2(l_hidden1, l_in, alpha, beta)
+    l_drop1 = layers.DropoutAlgorithm2(l_hidden1, alpha, beta)
     l_hidden2 = lasagne.layers.DenseLayer(l_drop1, num_units=n_hidden, 
             nonlinearity=lasagne.nonlinearities.rectify)
-    l_drop2 = layers.DropoutAlgorithm2(l_hidden2, l_in, alpha, beta)
+    l_drop2 = layers.DropoutAlgorithm2(l_hidden2, alpha, beta)
     l_out = lasagne.layers.DenseLayer(l_drop2, num_units=output_dim, 
             nonlinearity=lasagne.nonlinearities.softmax)
 
