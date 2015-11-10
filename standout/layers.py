@@ -87,12 +87,11 @@ def sample_mask(p):
     """
     give a matrix of probabilities, this will sample a mask. Theano.
     """
-    retain_prob = 1. - p
     # sample uniform and threshold to sample from many different 
     # probabilities
     uniform = _srng.uniform(p.shape)
     # keep if less than retain_prob
-    mask = uniform > retain_prob
+    mask = uniform < p
     return mask
 
 def get_all_beliefnets(output_layer, input_var):

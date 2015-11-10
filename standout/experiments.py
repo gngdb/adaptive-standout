@@ -12,7 +12,7 @@ import imp
 from collections import OrderedDict
 
 def figure3architecture(alpha, beta, batch_size=128, input_dim=784, 
-        output_dim=784, n_hidden=400):
+        output_dim=784, n_hidden=2048):
     """
     Returns the final and hidden layers in a network architecture that can be 
     used to replicate the results of Figure 3 in the paper.
