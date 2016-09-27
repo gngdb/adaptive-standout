@@ -1,4 +1,9 @@
 
+# Status
+
+This project will likely never be completed. Most of the code is here, and
+can run, but I will not be replicating all of the experiments in the paper.
+
 Replication of the paper ["Adaptive dropout for training deep neural
 networks"][paper] (with reference to the [related thesis][thesis]). I
 apologise to the authors for the name "adaptive-standout", but I didn't
